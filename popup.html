@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>ScreenRec</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <div class="header-row">
+      <h1>ScreenRec</h1>
+      <div id="timerDisplay" class="timer" style="display: none;">00:00</div>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn" class="primary-btn">Start Recording</button>
+      <button id="pauseBtn" class="pause-btn" style="display: none;">⏸ Pause</button>
+      <button id="stopBtn" class="secondary-btn" style="display: none;">■ Stop Recording</button>
+    </div>
+
+    <div id="status" class="status-message">Ready to record</div>
+
+    <button id="recordingsBtn" class="recordings-btn">📂 My Recordings</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

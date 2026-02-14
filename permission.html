@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ScreenRec — Permission Required</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            padding: 48px 40px;
+            max-width: 480px;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        /* ─── Audio Options ─── */
+        .audio-options {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+
+        .toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .toggle-btn:hover {
+            border-color: #94a3b8;
+        }
+
+        .toggle-btn.active {
+            border-color: #6366f1;
+            background: #eef2ff;
+            color: #4338ca;
+        }
+
+        .toggle-btn .toggle-icon {
+            font-size: 1.2rem;
+        }
+
+        /* ─── Buttons ─── */
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .success {
+            color: #16a34a;
+            font-weight: 500;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .reason-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="icon" id="pageIcon">🎬</div>
+        <div class="reason-badge" id="reasonBadge">Recording Cancelled</div>
+        <h1 id="pageTitle">Screen Recording Cancelled</h1>
+        <p id="pageDesc">
+            You cancelled or denied the screen sharing request.
+            Select your audio options below and click "Try Again".
+        </p>
+
+        <!-- Audio toggle buttons -->
+        <div class="audio-options" id="audioOptions">
+            <button class="toggle-btn" id="micToggle" data-active="false">
+                <span class="toggle-icon">🎙️</span>
+                <span>Microphone</span>
+            </button>
+            <button class="toggle-btn active" id="sysToggle" data-active="true">
+                <span class="toggle-icon">🔊</span>
+                <span>System Audio</span>
+            </button>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="retryBtn">Try Again</button>
+            <button class="btn btn-secondary" id="closeBtn">Close</button>
+        </div>
+        <p class="success" id="successMsg"></p>
+    </div>
+
+    <script src="permission.js"></script>
+</body>
+
+</html>

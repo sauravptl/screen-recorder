@@ -1,0 +1,169 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  width: 320px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  gap: 20px;
+}
+
+/* ── Header row ── */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  text-align: left;
+}
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Primary button (Start) ── */
+.primary-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06);
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.15);
+}
+
+.primary-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Pause / Resume button ── */
+.pause-btn {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.pause-btn:hover {
+  background: #fde68a;
+  border-color: #f59e0b;
+}
+
+/* ── Stop button ── */
+.secondary-btn {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background-color: #fca5a5;
+  color: #7f1d1d;
+}
+
+.secondary-btn:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Status message ── */
+.status-message {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+  padding: 8px;
+  background-color: #f3f4f6;
+  border-radius: 6px;
+}
+
+/* ── Timer ── */
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #ef4444;
+  animation: timerPulse 2s infinite;
+}
+
+@keyframes timerPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* ── My Recordings button ── */
+.recordings-btn {
+  width: 100%;
+  padding: 10px;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recordings-btn:hover {
+  background: #f1f5f9;
+  border-color: #6366f1;
+  color: #4f46e5;
+}

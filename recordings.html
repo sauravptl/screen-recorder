@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ScreenRec — My Recordings</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            padding: 32px 40px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .header p {
+            color: #a5b4fc;
+            margin-top: 4px;
+            font-size: 0.95rem;
+        }
+
+        /* ── Container ── */
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #64748b;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h2 {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        /* ── Recording card ── */
+        .recording-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .recording-card:hover {
+            border-color: #6366f1;
+        }
+
+        .card-body {
+            display: flex;
+            align-items: center;
+            padding: 20px 24px;
+            gap: 20px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 4px;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        /* ── Action buttons ── */
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-play {
+            background: #1e1b4b;
+            color: #a5b4fc;
+            border: 1px solid #3730a3;
+        }
+
+        .btn-play:hover {
+            background: #312e81;
+        }
+
+        .btn-download {
+            background: #064e3b;
+            color: #6ee7b7;
+            border: 1px solid #065f46;
+        }
+
+        .btn-download:hover {
+            background: #065f46;
+        }
+
+        .btn-delete {
+            background: #450a0a;
+            color: #fca5a5;
+            border: 1px solid #7f1d1d;
+        }
+
+        .btn-delete:hover {
+            background: #7f1d1d;
+        }
+
+        /* ── Video preview (expandable) ── */
+        .card-preview {
+            display: none;
+            padding: 0 24px 20px;
+        }
+
+        .card-preview video {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .card-preview.open {
+            display: block;
+        }
+
+        /* ── Stats bar ── */
+        .stats-bar {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            background: #1e293b;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #a5b4fc;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>📹 My Recordings</h1>
+        <p>Manage all your screen recordings</p>
+    </div>
+
+    <div class="container">
+        <div class="stats-bar" id="statsBar">
+            <div class="stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Recordings</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalSize">0 MB</div>
+                <div class="stat-label">Total Size</div>
+            </div>
+        </div>
+
+        <div id="recordingsList"></div>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="recordings.js"></script>
+</body>
+
+</html>
