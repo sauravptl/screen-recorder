@@ -11,6 +11,12 @@ async function loadRecordings() {
     const totalBytes = recordings.reduce((sum, r) => sum + r.size, 0);
     document.getElementById('totalSize').textContent = formatSize(totalBytes);
 
+    // Toggle delete-all button visibility
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+    if (deleteAllBtn) {
+        deleteAllBtn.style.display = recordings.length > 0 ? 'block' : 'none';
+    }
+
     // Empty state
     if (recordings.length === 0) {
         list.innerHTML = `
@@ -37,6 +43,8 @@ async function loadRecordings() {
             hour: '2-digit', minute: '2-digit'
         });
 
+        const durationStr = rec.duration ? formatDuration(rec.duration) : '';
+
         card.innerHTML = `
       <div class="card-body">
         <div class="card-icon">🎬</div>
@@ -45,6 +53,7 @@ async function loadRecordings() {
           <div class="card-meta">
             <span>📅 ${dateStr} at ${timeStr}</span>
             <span>📦 ${formatSize(rec.size)}</span>
+            ${durationStr ? `<span>⏱ ${durationStr}</span>` : ''}
           </div>
         </div>
         <div class="card-actions">
@@ -76,6 +85,16 @@ document.getElementById('recordingsList').addEventListener('click', async (e) =>
         await handleDelete(id);
     }
 });
+
+// ─── Delete All button ───
+const deleteAllBtn = document.getElementById('deleteAllBtn');
+if (deleteAllBtn) {
+    deleteAllBtn.addEventListener('click', async () => {
+        if (!confirm('Delete ALL recordings? This cannot be undone.')) return;
+        await clearAllRecordings();
+        loadRecordings();
+    });
+}
 
 // ─── Play / Preview toggle ───
 async function togglePreview(id) {
@@ -139,6 +158,22 @@ function formatSize(bytes) {
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
     return (bytes / 1073741824).toFixed(2) + ' GB';
+}
+
+function formatDuration(ms) {
+    if (ms <= 0) return '';
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+
+    if (h > 0) {
+        return `${h}h ${m}m ${s}s`;
+    }
+    if (m > 0) {
+        return `${m}m ${s}s`;
+    }
+    return `${s}s`;
 }
 
 function escapeHtml(str) {

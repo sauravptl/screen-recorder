@@ -1,10 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* ─── Base ─── */
 body {
   font-family: 'Inter', sans-serif;
-  width: 320px;
-  background-color: #ffffff;
-  color: #1a1a1a;
+  width: 340px;
+  background: #0f172a;
+  color: #e2e8f0;
   margin: 0;
   padding: 0;
 }
@@ -13,7 +14,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 24px;
-  gap: 20px;
+  gap: 16px;
 }
 
 /* ── Header row ── */
@@ -23,12 +24,62 @@ body {
   align-items: center;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  font-size: 1.4rem;
+}
+
 h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f1f5f9;
   margin: 0;
   text-align: left;
+  letter-spacing: -0.3px;
+}
+
+/* ── Audio Options ── */
+.audio-options {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid #1e293b;
+  background: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.toggle-btn:hover {
+  border-color: #334155;
+  background: #253046;
+}
+
+.toggle-btn.active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+}
+
+.toggle-btn .toggle-icon {
+  font-size: 1rem;
 }
 
 /* ── Controls ── */
@@ -43,19 +94,28 @@ h1 {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: white;
   border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
+  padding: 14px 20px;
+  border-radius: 12px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   font-family: inherit;
   font-size: 0.95rem;
   transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.primary-btn .btn-icon {
+  font-size: 0.6rem;
+  color: #ef4444;
 }
 
 .primary-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.4);
 }
 
 .primary-btn:active:not(:disabled) {
@@ -71,99 +131,91 @@ h1 {
 
 /* ── Pause / Resume button ── */
 .pause-btn {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
   font-family: inherit;
   transition: all 0.2s ease;
 }
 
 .pause-btn:hover {
-  background: #fde68a;
-  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 /* ── Stop button ── */
-.secondary-btn {
-  background-color: #fee2e2;
-  color: #ef4444;
-  border: 1px solid #fecaca;
+.stop-btn {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
   padding: 12px 20px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.95rem;
   font-family: inherit;
   transition: all 0.2s ease;
 }
 
-.secondary-btn:hover:not(:disabled) {
-  background-color: #fca5a5;
-  color: #7f1d1d;
+.stop-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
-.secondary-btn:disabled {
-  background-color: #f3f4f6;
-  color: #9ca3af;
-  border-color: #e5e7eb;
+.stop-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 /* ── Status message ── */
 .status-message {
   text-align: center;
-  font-size: 0.85rem;
-  color: #6b7280;
+  font-size: 0.8rem;
+  color: #475569;
   font-weight: 500;
-  padding: 8px;
-  background-color: #f3f4f6;
-  border-radius: 6px;
+  padding: 10px;
+  background: #1e293b;
+  border-radius: 8px;
+  border: 1px solid #334155;
 }
 
 /* ── Timer ── */
 .timer {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.1rem;
   color: #ef4444;
   animation: timerPulse 2s infinite;
+  letter-spacing: 1px;
 }
 
 @keyframes timerPulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.6;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* ── My Recordings button ── */
 .recordings-btn {
   width: 100%;
   padding: 10px;
-  background: #f8fafc;
-  color: #475569;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  border: 1px dashed #334155;
+  border-radius: 10px;
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .recordings-btn:hover {
-  background: #f1f5f9;
+  background: rgba(99, 102, 241, 0.08);
   border-color: #6366f1;
-  color: #4f46e5;
+  color: #a5b4fc;
 }

@@ -20,7 +20,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ success: false, error: 'Already recording.' });
             return false;
         }
-        openRecorderWindow()
+        const options = message.options || {};
+        openRecorderWindow(options)
             .then(() => sendResponse({ success: true }))
             .catch((err) => sendResponse({ success: false, error: err.message }));
         return true; // async
@@ -91,17 +92,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         isPaused = false;
         lastDuration = 0;
         chrome.action.setBadgeText({ text: '' });
-        // Don't clear recorderTabId here — the recorder window handles itself
         return false;
     }
 
     return false;
 });
 
-// ─── Open the recorder in a new tab ───
-async function openRecorderWindow() {
+// ─── Open the recorder in a new tab with audio options ───
+async function openRecorderWindow(options = {}) {
+    const params = new URLSearchParams();
+    if (options.micEnabled) params.set('mic', 'true');
+    if (options.sysEnabled === false) params.set('sys', 'false');
+
+    const queryStr = params.toString();
+    const url = queryStr ? `recorder.html?${queryStr}` : 'recorder.html';
+
     const tab = await chrome.tabs.create({
-        url: 'recorder.html',
+        url: url,
         active: true
     });
     recorderTabId = tab.id;

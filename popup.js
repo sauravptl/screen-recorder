@@ -1,3 +1,16 @@
+// ─── Audio toggle buttons ───
+document.getElementById('micToggle').addEventListener('click', function () {
+    const isActive = this.dataset.active === 'true';
+    this.dataset.active = String(!isActive);
+    this.classList.toggle('active', !isActive);
+});
+
+document.getElementById('sysToggle').addEventListener('click', function () {
+    const isActive = this.dataset.active === 'true';
+    this.dataset.active = String(!isActive);
+    this.classList.toggle('active', !isActive);
+});
+
 // ─── On popup open, sync state with background ───
 chrome.runtime.sendMessage({ type: 'get-status' }, (response) => {
     if (chrome.runtime.lastError) return;
@@ -15,8 +28,14 @@ document.getElementById('startBtn').addEventListener('click', () => {
     document.getElementById('startBtn').disabled = true;
     document.getElementById('status').textContent = 'Starting...';
 
+    const micEnabled = document.getElementById('micToggle').dataset.active === 'true';
+    const sysEnabled = document.getElementById('sysToggle').dataset.active === 'true';
+
     chrome.runtime.sendMessage(
-        { type: 'start-recording' },
+        {
+            type: 'start-recording',
+            options: { micEnabled, sysEnabled }
+        },
         (response) => {
             if (chrome.runtime.lastError) {
                 console.error('Error:', chrome.runtime.lastError.message);
@@ -92,37 +111,44 @@ function updateUI(state) {
     const pauseBtn = document.getElementById('pauseBtn');
     const timer = document.getElementById('timerDisplay');
     const status = document.getElementById('status');
+    const audioOptions = document.getElementById('audioOptions');
 
     switch (state) {
         case 'recording':
             startBtn.style.display = 'none';
+            audioOptions.style.display = 'none';
             stopBtn.style.display = 'block';
             stopBtn.disabled = false;
             pauseBtn.style.display = 'block';
             pauseBtn.textContent = '⏸ Pause';
             timer.style.display = 'block';
-            status.textContent = 'Recording...';
+            status.textContent = '● Recording...';
+            status.style.color = '#ef4444';
             break;
 
         case 'paused':
             startBtn.style.display = 'none';
+            audioOptions.style.display = 'none';
             stopBtn.style.display = 'block';
             stopBtn.disabled = false;
             pauseBtn.style.display = 'block';
             pauseBtn.textContent = '▶ Resume';
             timer.style.display = 'block';
-            status.textContent = 'Paused';
+            status.textContent = '⏸ Paused';
+            status.style.color = '#fbbf24';
             break;
 
         case 'idle':
         default:
-            startBtn.style.display = 'block';
+            startBtn.style.display = 'flex';
             startBtn.disabled = false;
+            audioOptions.style.display = 'flex';
             stopBtn.style.display = 'none';
             pauseBtn.style.display = 'none';
             timer.style.display = 'none';
             timer.textContent = '00:00';
             status.textContent = 'Ready to record';
+            status.style.color = '#475569';
             break;
     }
 }

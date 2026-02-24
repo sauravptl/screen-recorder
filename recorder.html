@@ -29,37 +29,140 @@
             text-align: center;
             padding: 24px 32px;
             width: 100%;
+            max-width: 520px;
         }
 
         /* ── Start screen ── */
         .start-screen h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        .start-screen .subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        /* ── Audio options ── */
+        .audio-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: 2px solid #334155;
+            background: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+
+        .toggle-btn:hover {
+            border-color: #475569;
+            background: #253046;
+        }
+
+        .toggle-btn.active {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+        }
+
+        .toggle-btn .toggle-icon {
             font-size: 1.1rem;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 16px;
         }
 
         .start-btn {
             background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: #fff;
             border: none;
-            padding: 14px 32px;
-            border-radius: 10px;
+            padding: 14px 40px;
+            border-radius: 12px;
             font-family: inherit;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.1s, box-shadow 0.2s;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
         }
 
         .start-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(99, 102, 241, 0.45);
         }
 
         .start-btn:active {
             transform: translateY(0);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .tip {
+            font-size: 0.75rem;
+            color: #475569;
+            margin-top: 16px;
+            line-height: 1.4;
+        }
+
+        /* ── Countdown overlay ── */
+        .countdown-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .countdown-number {
+            font-size: 8rem;
+            font-weight: 800;
+            color: #6366f1;
+            text-shadow: 0 0 60px rgba(99, 102, 241, 0.5), 0 0 120px rgba(99, 102, 241, 0.2);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .countdown-animate {
+            animation: countdownPop 1s ease-out;
+        }
+
+        @keyframes countdownPop {
+            0% {
+                transform: scale(1.8);
+                opacity: 0;
+            }
+
+            20% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.3;
+                transform: scale(0.9);
+            }
         }
 
         /* ── Recording screen ── */
@@ -71,21 +174,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 16px;
         }
 
         .rec-dot {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: #ef4444;
             border-radius: 50%;
             animation: pulse 1.5s infinite;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
         }
 
         .rec-dot.paused {
             background: #f59e0b;
             animation: none;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
         }
 
         @keyframes pulse {
@@ -93,10 +198,12 @@
             0%,
             100% {
                 opacity: 1;
+                transform: scale(1);
             }
 
             50% {
                 opacity: 0.3;
+                transform: scale(0.85);
             }
         }
 
@@ -105,51 +212,53 @@
             font-weight: 600;
             color: #94a3b8;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
         }
 
         .timer {
-            font-size: 2rem;
+            font-size: 3rem;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
             color: #f1f5f9;
-            margin-bottom: 20px;
+            margin-bottom: 28px;
+            letter-spacing: 2px;
         }
 
         .rec-controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
         }
 
         .rec-btn {
-            padding: 10px 24px;
+            padding: 12px 28px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-family: inherit;
             font-size: 0.9rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.15s ease;
         }
 
         .btn-pause {
-            background: #fef3c7;
-            color: #92400e;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
 
         .btn-pause:hover {
-            background: #fde68a;
+            background: rgba(245, 158, 11, 0.25);
         }
 
         .btn-stop {
-            background: #fee2e2;
-            color: #ef4444;
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .btn-stop:hover {
-            background: #fca5a5;
-            color: #7f1d1d;
+            background: rgba(239, 68, 68, 0.25);
         }
 
         /* ── Saving screen ── */
@@ -158,29 +267,65 @@
         }
 
         .saving-screen p {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: #94a3b8;
+        }
+
+        .saving-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #334155;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* ── Error state ── */
         .error-msg {
             display: none;
             color: #fca5a5;
-            font-size: 0.9rem;
-            margin-top: 12px;
+            font-size: 0.85rem;
+            margin-top: 16px;
+            padding: 10px 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
         }
     </style>
 </head>
 
 <body>
+    <!-- Countdown overlay -->
+    <div class="countdown-overlay" id="countdownOverlay">
+        <div class="countdown-number" id="countdownNumber">3</div>
+    </div>
+
     <!-- Start screen -->
     <div class="container" id="startScreen">
         <div class="start-screen">
             <h2>🎬 Screen Recorder</h2>
+            <p class="subtitle">Choose your audio options and start capturing</p>
+
+            <div class="audio-options">
+                <button class="toggle-btn" id="micToggle" data-active="false">
+                    <span class="toggle-icon">🎙️</span>
+                    <span>Microphone</span>
+                </button>
+                <button class="toggle-btn active" id="sysToggle" data-active="true">
+                    <span class="toggle-icon">🔊</span>
+                    <span>System Audio</span>
+                </button>
+            </div>
+
             <button class="start-btn" id="startCaptureBtn">▶ Start Capture</button>
-            <p style="font-size:0.75rem; color:#64748b; margin-top:12px; line-height:1.4;">
-                💡 For audio from video calls, share a <strong>Chrome tab</strong>
-            </p>
+            <p class="tip">💡 For audio from video calls, share a <strong>Chrome tab</strong></p>
             <p class="error-msg" id="errorMsg"></p>
         </div>
     </div>
@@ -200,6 +345,7 @@
 
     <!-- Saving screen -->
     <div class="container saving-screen" id="savingScreen">
+        <div class="saving-spinner"></div>
         <p>💾 Saving recording...</p>
     </div>
 

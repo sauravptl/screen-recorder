@@ -10,14 +10,32 @@
 <body>
   <div class="container">
     <div class="header-row">
-      <h1>ScreenRec</h1>
+      <div class="brand">
+        <div class="brand-icon">🎬</div>
+        <h1>ScreenRec</h1>
+      </div>
       <div id="timerDisplay" class="timer" style="display: none;">00:00</div>
     </div>
 
+    <!-- Audio options (visible before recording starts) -->
+    <div id="audioOptions" class="audio-options">
+      <button class="toggle-btn" id="micToggle" data-active="false">
+        <span class="toggle-icon">🎙️</span>
+        <span>Microphone</span>
+      </button>
+      <button class="toggle-btn active" id="sysToggle" data-active="true">
+        <span class="toggle-icon">🔊</span>
+        <span>System Audio</span>
+      </button>
+    </div>
+
     <div class="controls">
-      <button id="startBtn" class="primary-btn">Start Recording</button>
+      <button id="startBtn" class="primary-btn">
+        <span class="btn-icon">●</span>
+        Start Recording
+      </button>
       <button id="pauseBtn" class="pause-btn" style="display: none;">⏸ Pause</button>
-      <button id="stopBtn" class="secondary-btn" style="display: none;">■ Stop Recording</button>
+      <button id="stopBtn" class="stop-btn" style="display: none;">■ Stop Recording</button>
     </div>
 
     <div id="status" class="status-message">Ready to record</div>

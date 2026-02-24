@@ -1,8 +1,8 @@
 // ─── IndexedDB helper for storing recordings ───
-// Shared by offscreen.js and recordings.js
+// Shared by recorder.js and recordings.js
 
 const DB_NAME = 'ScreenRecDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'recordings';
 
 function openDB() {
@@ -22,7 +22,7 @@ function openDB() {
     });
 }
 
-async function saveRecording(blob, name) {
+async function saveRecording(blob, name, duration) {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -31,10 +31,11 @@ async function saveRecording(blob, name) {
             name: name,
             blob: blob,
             size: blob.size,
+            duration: duration || 0,
             timestamp: Date.now()
         };
         const req = store.add(record);
-        req.onsuccess = () => resolve(req.result); // returns the id
+        req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
     });
 }
@@ -67,6 +68,17 @@ async function deleteRecording(id) {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function clearAllRecordings() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.clear();
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
     });
