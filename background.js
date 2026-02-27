@@ -81,8 +81,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         recorderTabId = null;
         recorderWindowId = null;
         chrome.action.setBadgeText({ text: '' });
-        // Open the recordings page
-        chrome.tabs.create({ url: 'recordings.html' });
+        // Open the recordings page (reuse existing tab if open)
+        openRecordingsPage();
         return false;
     }
 
@@ -112,6 +112,18 @@ async function openRecorderWindow(options = {}) {
         active: true
     });
     recorderTabId = tab.id;
+}
+
+// ─── Open recordings page: reuse existing tab or create new one ───
+async function openRecordingsPage() {
+    const url = chrome.runtime.getURL('recordings.html');
+    const tabs = await chrome.tabs.query({ url });
+    if (tabs.length > 0) {
+        await chrome.tabs.update(tabs[0].id, { active: true });
+        await chrome.tabs.reload(tabs[0].id);
+    } else {
+        await chrome.tabs.create({ url: 'recordings.html' });
+    }
 }
 
 // ─── Detect if the recorder window/tab is closed while recording ───

@@ -160,10 +160,21 @@ startCaptureBtn.addEventListener("click", async () => {
     // 4. Show countdown 3…2…1
     await showCountdown();
 
-    // 5. Create MediaRecorder
-    const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-      ? "video/webm;codecs=vp9"
-      : "video/webm";
+    // 5. Create MediaRecorder — prefer MP4 (Chrome 121+), fallback to WebM
+    let mime = "";
+    const candidates = [
+      "video/mp4;codecs=avc1,opus",
+      "video/mp4",
+      "video/webm;codecs=vp9",
+      "video/webm",
+    ];
+    for (const codec of candidates) {
+      if (MediaRecorder.isTypeSupported(codec)) {
+        mime = codec;
+        break;
+      }
+    }
+    if (!mime) mime = "video/webm";
 
     recorder = new MediaRecorder(finalStream, {
       mimeType: mime,
@@ -336,10 +347,13 @@ async function handleRecordingStop() {
     return;
   }
 
-  const blob = new Blob(data, { type: "video/webm" });
+  const mimeType = recorder?.mimeType || "video/webm";
+  const isMP4 = mimeType.startsWith("video/mp4");
+  const blob = new Blob(data, { type: isMP4 ? "video/mp4" : "video/webm" });
   const now = new Date();
   const ts = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const filename = `ScreenRec_${ts}.webm`;
+  const ext = isMP4 ? "mp4" : "webm";
+  const filename = `ScreenRec_${ts}.${ext}`;
 
   try {
     await saveRecording(blob, filename, duration);
