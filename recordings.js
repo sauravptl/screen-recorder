@@ -59,6 +59,7 @@ async function loadRecordings() {
         <div class="card-actions">
           <button class="action-btn btn-play" data-id="${rec.id}">▶ Play</button>
           <button class="action-btn btn-download" data-id="${rec.id}">⬇ Download</button>
+          <button class="action-btn btn-share" data-id="${rec.id}">📤 Share</button>
           <button class="action-btn btn-delete" data-id="${rec.id}">🗑 Delete</button>
         </div>
       </div>
@@ -81,6 +82,8 @@ document.getElementById('recordingsList').addEventListener('click', async (e) =>
         togglePreview(id);
     } else if (btn.classList.contains('btn-download')) {
         downloadRecording(id);
+    } else if (btn.classList.contains('btn-share')) {
+        shareRecording(id);
     } else if (btn.classList.contains('btn-delete')) {
         await handleDelete(id);
     }
@@ -119,7 +122,7 @@ async function togglePreview(id) {
     video.play();
 }
 
-// ─── Download ───
+// ─── Download (use MP4 filename) ───
 async function downloadRecording(id) {
     const rec = await getRecording(id);
     if (!rec) return;
@@ -127,11 +130,39 @@ async function downloadRecording(id) {
     const url = URL.createObjectURL(rec.blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = rec.name;
+    // Ensure .mp4 extension for MP4 blobs
+    const name = rec.blob.type.startsWith('video/mp4')
+        ? rec.name.replace(/\.webm$/, '.mp4')
+        : rec.name;
+    a.download = name;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+}
+
+// ─── Share (via Web Share API) ───
+async function shareRecording(id) {
+    const rec = await getRecording(id);
+    if (!rec) return;
+
+    const isMP4 = rec.blob.type.startsWith('video/mp4');
+    const mimeType = isMP4 ? 'video/mp4' : 'video/webm';
+    const name = isMP4 ? rec.name.replace(/\.webm$/, '.mp4') : rec.name;
+    const file = new File([rec.blob], name, { type: mimeType });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: name });
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error('Share failed:', err);
+            }
+        }
+    } else {
+        // Fallback: trigger download
+        downloadRecording(id);
+    }
 }
 
 // ─── Delete ───
