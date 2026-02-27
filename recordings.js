@@ -1,38 +1,31 @@
-// ─── Gemini API Key management ───
-async function getApiKey() {
-    const result = await chrome.storage.local.get('geminiApiKey');
-    return result.geminiApiKey || '';
-}
+// ─── Transcription Worker ───
+let whisperWorker = null;
+let whisperCallbacks = null; // { onStatus, onProgress, onResult, onError }
 
-async function saveApiKey(key) {
-    await chrome.storage.local.set({ geminiApiKey: key });
-}
-
-// Init API key input
-(async () => {
-    const input = document.getElementById('geminiKeyInput');
-    const saveBtn = document.getElementById('saveKeyBtn');
-    const status = document.getElementById('apiKeyStatus');
-
-    const existing = await getApiKey();
-    if (existing) {
-        input.value = existing;
-        status.textContent = 'Key saved';
-        status.className = 'api-key-status saved';
+function getWhisperWorker() {
+    if (!whisperWorker) {
+        whisperWorker = new Worker('transcription-worker.js', { type: 'module' });
+        whisperWorker.addEventListener('message', (e) => {
+            const cb = whisperCallbacks;
+            if (!cb) return;
+            if (e.data.type === 'status') cb.onStatus?.(e.data.message);
+            else if (e.data.type === 'progress') cb.onProgress?.(e.data.progress);
+            else if (e.data.type === 'result') cb.onResult?.(e.data.text);
+            else if (e.data.type === 'error') cb.onError?.(e.data.message);
+        });
     }
+    return whisperWorker;
+}
 
-    saveBtn.addEventListener('click', async () => {
-        const key = input.value.trim();
-        if (!key) {
-            status.textContent = 'Key is empty';
-            status.className = 'api-key-status';
-            return;
-        }
-        await saveApiKey(key);
-        status.textContent = 'Key saved';
-        status.className = 'api-key-status saved';
-    });
-})();
+// ─── Extract audio from video blob as 16 kHz mono Float32Array ───
+async function extractAudio(blob) {
+    const audioContext = new AudioContext({ sampleRate: 16000 });
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    const audio = audioBuffer.getChannelData(0); // mono Float32Array
+    await audioContext.close();
+    return audio;
+}
 
 // ─── Load & Render all recordings ───
 async function loadRecordings() {
@@ -129,6 +122,14 @@ document.getElementById('recordingsList').addEventListener('click', async (e) =>
     }
 });
 
+// ─── Copy button delegation ───
+document.getElementById('recordingsList').addEventListener('click', (e) => {
+    const copyBtn = e.target.closest('.btn-copy-transcription');
+    if (!copyBtn) return;
+    const id = Number(copyBtn.dataset.id);
+    copyTranscription(id);
+});
+
 // ─── Delete All button ───
 const deleteAllBtn = document.getElementById('deleteAllBtn');
 if (deleteAllBtn) {
@@ -205,19 +206,12 @@ async function shareRecording(id) {
     }
 }
 
-// ─── Transcribe via Gemini API ───
+// ─── Transcribe recording (Whisper primary, Speech API fallback) ───
 async function transcribeRecording(id, btn) {
-    const apiKey = await getApiKey();
-    if (!apiKey) {
-        alert('Please enter and save your Gemini API key first.');
-        document.getElementById('geminiKeyInput').focus();
-        return;
-    }
-
     const panel = document.getElementById(`transcription-${id}`);
 
-    // Toggle off if already open
-    if (panel.classList.contains('open')) {
+    // Toggle off if already showing a result
+    if (panel.classList.contains('open') && panel.querySelector('.transcription-text')) {
         panel.classList.remove('open');
         return;
     }
@@ -232,162 +226,163 @@ async function transcribeRecording(id, btn) {
             <h4>Transcription</h4>
             <div class="transcription-loading">
                 <div class="spinner"></div>
-                <span>Uploading and transcribing with Gemini...</span>
+                <span class="transcription-status">Extracting audio...</span>
+            </div>
+            <div class="transcription-progress-bar">
+                <div class="transcription-progress-fill" id="progress-fill-${id}"></div>
             </div>
         </div>`;
     btn.disabled = true;
 
     try {
-        const mimeType = rec.blob.type || 'video/webm';
-        let transcription;
-
-        if (rec.blob.size < 15 * 1024 * 1024) {
-            // Small file: use inline base64
-            transcription = await transcribeInline(rec.blob, mimeType, apiKey);
-        } else {
-            // Large file: use Gemini File API
-            transcription = await transcribeViaFileAPI(rec.blob, mimeType, apiKey);
+        // Try Whisper first (local, accurate)
+        const text = await transcribeWithWhisper(id, rec);
+        showTranscriptionResult(id, text);
+    } catch (whisperErr) {
+        console.warn('Whisper failed, trying Speech API fallback:', whisperErr.message);
+        // Fallback to Web Speech API
+        try {
+            panel.querySelector('.transcription-status').textContent =
+                'Whisper unavailable. Using browser speech recognition (plays audio)...';
+            const progressBar = panel.querySelector('.transcription-progress-bar');
+            if (progressBar) progressBar.style.display = 'none';
+            const text = await transcribeWithSpeechAPI(rec);
+            showTranscriptionResult(id, text || 'No speech detected.');
+        } catch (speechErr) {
+            panel.innerHTML = `
+                <div class="transcription-box">
+                    <h4>Transcription</h4>
+                    <div class="transcription-error">
+                        Transcription failed: ${escapeHtml(whisperErr.message)}<br>
+                        Speech API fallback also failed: ${escapeHtml(speechErr.message)}
+                    </div>
+                </div>`;
         }
-
-        panel.innerHTML = `
-            <div class="transcription-box">
-                <h4>Transcription</h4>
-                <div class="transcription-text">${escapeHtml(transcription)}</div>
-                <div class="transcription-actions">
-                    <button onclick="copyTranscription(${id})">Copy to clipboard</button>
-                </div>
-            </div>`;
-    } catch (err) {
-        panel.innerHTML = `
-            <div class="transcription-box">
-                <h4>Transcription</h4>
-                <div class="transcription-error">${escapeHtml(err.message)}</div>
-            </div>`;
     } finally {
         btn.disabled = false;
     }
 }
 
-// ─── Inline transcription (< 15 MB) ───
-async function transcribeInline(blob, mimeType, apiKey) {
-    const base64 = await blobToBase64(blob);
-
-    const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { inline_data: { mime_type: mimeType, data: base64 } },
-                        { text: "Transcribe all spoken audio from this video. Provide only the transcription text." }
-                    ]
-                }]
-            })
-        }
-    );
-
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `Gemini API error (${response.status})`);
-    }
-
-    const result = await response.json();
-    return result.candidates?.[0]?.content?.parts?.[0]?.text || 'No speech detected in this recording.';
+function showTranscriptionResult(id, text) {
+    const panel = document.getElementById(`transcription-${id}`);
+    panel.innerHTML = `
+        <div class="transcription-box">
+            <h4>Transcription</h4>
+            <div class="transcription-text">${escapeHtml(text)}</div>
+            <div class="transcription-actions">
+                <button class="btn-copy-transcription" data-id="${id}">Copy to clipboard</button>
+            </div>
+        </div>`;
 }
 
-// ─── File API transcription (>= 15 MB) ───
-async function transcribeViaFileAPI(blob, mimeType, apiKey) {
-    // Step 1: Start resumable upload
-    const startRes = await fetch(
-        `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: {
-                'X-Goog-Upload-Protocol': 'resumable',
-                'X-Goog-Upload-Command': 'start',
-                'X-Goog-Upload-Header-Content-Length': blob.size,
-                'X-Goog-Upload-Header-Content-Type': mimeType,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ file: { display_name: 'screenrec_transcribe' } }),
+// ─── Whisper transcription via Web Worker ───
+function transcribeWithWhisper(id, rec) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Extract audio from video (16 kHz mono)
+            const audioData = await extractAudio(rec.blob);
+            const worker = getWhisperWorker();
+
+            whisperCallbacks = {
+                onStatus(msg) {
+                    const statusEl = document.querySelector(`#transcription-${id} .transcription-status`);
+                    if (statusEl) statusEl.textContent = msg;
+                },
+                onProgress(progress) {
+                    if (progress.status === 'progress' && progress.progress != null) {
+                        const fill = document.getElementById(`progress-fill-${id}`);
+                        if (fill) fill.style.width = `${Math.round(progress.progress)}%`;
+                        const statusEl = document.querySelector(`#transcription-${id} .transcription-status`);
+                        if (statusEl) {
+                            const pct = Math.round(progress.progress);
+                            statusEl.textContent = `Downloading model... ${pct}%`;
+                        }
+                    }
+                },
+                onResult(text) {
+                    whisperCallbacks = null;
+                    resolve(text);
+                },
+                onError(msg) {
+                    whisperCallbacks = null;
+                    reject(new Error(msg));
+                }
+            };
+
+            // Send audio to worker (transfer the underlying buffer for performance)
+            worker.postMessage(
+                { type: 'transcribe', audio: audioData },
+                [audioData.buffer]
+            );
+        } catch (err) {
+            reject(err);
         }
-    );
-
-    if (!startRes.ok) {
-        const err = await startRes.json().catch(() => ({}));
-        throw new Error(err.error?.message || `Upload init failed (${startRes.status})`);
-    }
-
-    const uploadUrl = startRes.headers.get('X-Goog-Upload-URL');
-    if (!uploadUrl) throw new Error('Failed to get upload URL from Gemini.');
-
-    // Step 2: Upload video bytes
-    const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-            'Content-Length': blob.size,
-            'X-Goog-Upload-Offset': '0',
-            'X-Goog-Upload-Command': 'upload, finalize',
-        },
-        body: blob,
     });
-
-    if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
-
-    const fileInfo = await uploadRes.json();
-    let file = fileInfo.file;
-
-    // Step 3: Poll until processing is done
-    while (file.state === 'PROCESSING') {
-        await new Promise(r => setTimeout(r, 3000));
-        const checkRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/${file.name}?key=${apiKey}`
-        );
-        if (!checkRes.ok) throw new Error(`File status check failed (${checkRes.status})`);
-        file = await checkRes.json();
-    }
-
-    if (file.state !== 'ACTIVE') throw new Error(`File processing failed: ${file.state}`);
-
-    // Step 4: Generate transcription
-    const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { file_data: { mime_type: file.mimeType, file_uri: file.uri } },
-                        { text: "Transcribe all spoken audio from this video. Provide only the transcription text." }
-                    ]
-                }]
-            })
-        }
-    );
-
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `Gemini API error (${response.status})`);
-    }
-
-    const result = await response.json();
-    return result.candidates?.[0]?.content?.parts?.[0]?.text || 'No speech detected in this recording.';
 }
 
-// ─── Blob → base64 ───
-function blobToBase64(blob) {
+// ─── Web Speech API fallback (plays audio, captures via browser recognition) ───
+function transcribeWithSpeechAPI(rec) {
     return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            // Strip the data URL prefix (e.g. "data:video/mp4;base64,")
-            const base64 = reader.result.split(',')[1];
-            resolve(base64);
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            reject(new Error('Speech Recognition API not supported in this browser.'));
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        let fullText = '';
+
+        // Play the recording audio so the mic can pick it up
+        const audioUrl = URL.createObjectURL(rec.blob);
+        const audio = new Audio(audioUrl);
+        audio.volume = 1.0;
+
+        recognition.onresult = (event) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    fullText += event.results[i][0].transcript + ' ';
+                }
+            }
         };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+
+        recognition.onerror = (event) => {
+            audio.pause();
+            URL.revokeObjectURL(audioUrl);
+            if (event.error === 'no-speech') {
+                resolve(fullText.trim() || 'No speech detected.');
+            } else {
+                reject(new Error(`Speech recognition error: ${event.error}`));
+            }
+        };
+
+        recognition.onend = () => {
+            resolve(fullText.trim() || 'No speech detected.');
+        };
+
+        audio.onended = () => {
+            // Wait a moment for final results, then stop recognition
+            setTimeout(() => {
+                recognition.stop();
+                URL.revokeObjectURL(audioUrl);
+            }, 1500);
+        };
+
+        audio.onerror = () => {
+            recognition.stop();
+            URL.revokeObjectURL(audioUrl);
+            reject(new Error('Failed to play audio for speech recognition.'));
+        };
+
+        recognition.start();
+        audio.play().catch((err) => {
+            recognition.stop();
+            URL.revokeObjectURL(audioUrl);
+            reject(new Error(`Audio playback failed: ${err.message}`));
+        });
     });
 }
 
@@ -399,7 +394,7 @@ async function copyTranscription(id) {
 
     try {
         await navigator.clipboard.writeText(textEl.textContent);
-        const btn = panel.querySelector('.transcription-actions button');
+        const btn = panel.querySelector('.btn-copy-transcription');
         if (btn) {
             const original = btn.textContent;
             btn.textContent = 'Copied!';
