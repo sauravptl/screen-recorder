@@ -1,22 +1,3 @@
-// ─── Transcription Worker ───
-let whisperWorker = null;
-let whisperCallbacks = null; // { onStatus, onProgress, onResult, onError }
-
-function getWhisperWorker() {
-    if (!whisperWorker) {
-        whisperWorker = new Worker('transcription-worker.js', { type: 'module' });
-        whisperWorker.addEventListener('message', (e) => {
-            const cb = whisperCallbacks;
-            if (!cb) return;
-            if (e.data.type === 'status') cb.onStatus?.(e.data.message);
-            else if (e.data.type === 'progress') cb.onProgress?.(e.data.progress);
-            else if (e.data.type === 'result') cb.onResult?.(e.data.text);
-            else if (e.data.type === 'error') cb.onError?.(e.data.message);
-        });
-    }
-    return whisperWorker;
-}
-
 // ─── Extract audio from video blob as 16 kHz mono Float32Array ───
 async function extractAudio(blob) {
     const audioContext = new AudioContext({ sampleRate: 16000 });
@@ -275,49 +256,34 @@ function showTranscriptionResult(id, text) {
         </div>`;
 }
 
-// ─── Whisper transcription via Web Worker ───
-function transcribeWithWhisper(id, rec) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            // Extract audio from video (16 kHz mono)
-            const audioData = await extractAudio(rec.blob);
-            const worker = getWhisperWorker();
+// ─── Whisper transcription (runs on main thread via whisper.js module) ───
+async function transcribeWithWhisper(id, rec) {
+    if (typeof window.whisperTranscribe !== 'function') {
+        throw new Error('Whisper engine is still loading. Please try again in a moment.');
+    }
 
-            whisperCallbacks = {
-                onStatus(msg) {
-                    const statusEl = document.querySelector(`#transcription-${id} .transcription-status`);
-                    if (statusEl) statusEl.textContent = msg;
-                },
-                onProgress(progress) {
-                    if (progress.status === 'progress' && progress.progress != null) {
-                        const fill = document.getElementById(`progress-fill-${id}`);
-                        if (fill) fill.style.width = `${Math.round(progress.progress)}%`;
-                        const statusEl = document.querySelector(`#transcription-${id} .transcription-status`);
-                        if (statusEl) {
-                            const pct = Math.round(progress.progress);
-                            statusEl.textContent = `Downloading model... ${pct}%`;
-                        }
-                    }
-                },
-                onResult(text) {
-                    whisperCallbacks = null;
-                    resolve(text);
-                },
-                onError(msg) {
-                    whisperCallbacks = null;
-                    reject(new Error(msg));
+    // Extract audio from video (16 kHz mono)
+    const audioData = await extractAudio(rec.blob);
+
+    const text = await window.whisperTranscribe(audioData, {
+        onStatus(msg) {
+            const statusEl = document.querySelector(`#transcription-${id} .transcription-status`);
+            if (statusEl) statusEl.textContent = msg;
+        },
+        onProgress(progress) {
+            if (progress.status === 'progress' && progress.progress != null) {
+                const fill = document.getElementById(`progress-fill-${id}`);
+                if (fill) fill.style.width = `${Math.round(progress.progress)}%`;
+                const statusEl = document.querySelector(`#transcription-${id} .transcription-status`);
+                if (statusEl) {
+                    const pct = Math.round(progress.progress);
+                    statusEl.textContent = `Downloading model... ${pct}%`;
                 }
-            };
-
-            // Send audio to worker (transfer the underlying buffer for performance)
-            worker.postMessage(
-                { type: 'transcribe', audio: audioData },
-                [audioData.buffer]
-            );
-        } catch (err) {
-            reject(err);
+            }
         }
     });
+
+    return text;
 }
 
 // ─── Web Speech API fallback (plays audio, captures via browser recognition) ───
