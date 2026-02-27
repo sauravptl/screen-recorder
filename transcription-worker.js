@@ -10,6 +10,9 @@ env.allowLocalModels = false;
 const wasmBase = new URL('./lib/', import.meta.url).href;
 env.backends.onnx.wasm.wasmPaths = wasmBase;
 
+// Use single-threaded mode (pthread sub-workers have CSP issues in extensions)
+env.backends.onnx.wasm.numThreads = 1;
+
 let transcriber = null;
 
 self.addEventListener('message', async (e) => {
