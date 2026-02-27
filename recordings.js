@@ -1,3 +1,39 @@
+// ─── Gemini API Key management ───
+async function getApiKey() {
+    const result = await chrome.storage.local.get('geminiApiKey');
+    return result.geminiApiKey || '';
+}
+
+async function saveApiKey(key) {
+    await chrome.storage.local.set({ geminiApiKey: key });
+}
+
+// Init API key input
+(async () => {
+    const input = document.getElementById('geminiKeyInput');
+    const saveBtn = document.getElementById('saveKeyBtn');
+    const status = document.getElementById('apiKeyStatus');
+
+    const existing = await getApiKey();
+    if (existing) {
+        input.value = existing;
+        status.textContent = 'Key saved';
+        status.className = 'api-key-status saved';
+    }
+
+    saveBtn.addEventListener('click', async () => {
+        const key = input.value.trim();
+        if (!key) {
+            status.textContent = 'Key is empty';
+            status.className = 'api-key-status';
+            return;
+        }
+        await saveApiKey(key);
+        status.textContent = 'Key saved';
+        status.className = 'api-key-status saved';
+    });
+})();
+
 // ─── Load & Render all recordings ───
 async function loadRecordings() {
     const list = document.getElementById('recordingsList');
@@ -59,13 +95,15 @@ async function loadRecordings() {
         <div class="card-actions">
           <button class="action-btn btn-play" data-id="${rec.id}">▶ Play</button>
           <button class="action-btn btn-download" data-id="${rec.id}">⬇ Download</button>
+          <button class="action-btn btn-transcribe" data-id="${rec.id}">📝 Transcribe</button>
           <button class="action-btn btn-share" data-id="${rec.id}">📤 Share</button>
           <button class="action-btn btn-delete" data-id="${rec.id}">🗑 Delete</button>
         </div>
       </div>
       <div class="card-preview" id="preview-${rec.id}">
         <video controls></video>
-      </div>`;
+      </div>
+      <div class="card-transcription" id="transcription-${rec.id}"></div>`;
 
         list.appendChild(card);
     });
@@ -82,6 +120,8 @@ document.getElementById('recordingsList').addEventListener('click', async (e) =>
         togglePreview(id);
     } else if (btn.classList.contains('btn-download')) {
         downloadRecording(id);
+    } else if (btn.classList.contains('btn-transcribe')) {
+        transcribeRecording(id, btn);
     } else if (btn.classList.contains('btn-share')) {
         shareRecording(id);
     } else if (btn.classList.contains('btn-delete')) {
@@ -162,6 +202,211 @@ async function shareRecording(id) {
     } else {
         // Fallback: trigger download
         downloadRecording(id);
+    }
+}
+
+// ─── Transcribe via Gemini API ───
+async function transcribeRecording(id, btn) {
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+        alert('Please enter and save your Gemini API key first.');
+        document.getElementById('geminiKeyInput').focus();
+        return;
+    }
+
+    const panel = document.getElementById(`transcription-${id}`);
+
+    // Toggle off if already open
+    if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        return;
+    }
+
+    const rec = await getRecording(id);
+    if (!rec) return;
+
+    // Show loading
+    panel.classList.add('open');
+    panel.innerHTML = `
+        <div class="transcription-box">
+            <h4>Transcription</h4>
+            <div class="transcription-loading">
+                <div class="spinner"></div>
+                <span>Uploading and transcribing with Gemini...</span>
+            </div>
+        </div>`;
+    btn.disabled = true;
+
+    try {
+        const mimeType = rec.blob.type || 'video/webm';
+        let transcription;
+
+        if (rec.blob.size < 15 * 1024 * 1024) {
+            // Small file: use inline base64
+            transcription = await transcribeInline(rec.blob, mimeType, apiKey);
+        } else {
+            // Large file: use Gemini File API
+            transcription = await transcribeViaFileAPI(rec.blob, mimeType, apiKey);
+        }
+
+        panel.innerHTML = `
+            <div class="transcription-box">
+                <h4>Transcription</h4>
+                <div class="transcription-text">${escapeHtml(transcription)}</div>
+                <div class="transcription-actions">
+                    <button onclick="copyTranscription(${id})">Copy to clipboard</button>
+                </div>
+            </div>`;
+    } catch (err) {
+        panel.innerHTML = `
+            <div class="transcription-box">
+                <h4>Transcription</h4>
+                <div class="transcription-error">${escapeHtml(err.message)}</div>
+            </div>`;
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ─── Inline transcription (< 15 MB) ───
+async function transcribeInline(blob, mimeType, apiKey) {
+    const base64 = await blobToBase64(blob);
+
+    const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { inline_data: { mime_type: mimeType, data: base64 } },
+                        { text: "Transcribe all spoken audio from this video. Provide only the transcription text." }
+                    ]
+                }]
+            })
+        }
+    );
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Gemini API error (${response.status})`);
+    }
+
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || 'No speech detected in this recording.';
+}
+
+// ─── File API transcription (>= 15 MB) ───
+async function transcribeViaFileAPI(blob, mimeType, apiKey) {
+    // Step 1: Start resumable upload
+    const startRes = await fetch(
+        `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: {
+                'X-Goog-Upload-Protocol': 'resumable',
+                'X-Goog-Upload-Command': 'start',
+                'X-Goog-Upload-Header-Content-Length': blob.size,
+                'X-Goog-Upload-Header-Content-Type': mimeType,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ file: { display_name: 'screenrec_transcribe' } }),
+        }
+    );
+
+    if (!startRes.ok) {
+        const err = await startRes.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Upload init failed (${startRes.status})`);
+    }
+
+    const uploadUrl = startRes.headers.get('X-Goog-Upload-URL');
+    if (!uploadUrl) throw new Error('Failed to get upload URL from Gemini.');
+
+    // Step 2: Upload video bytes
+    const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+            'Content-Length': blob.size,
+            'X-Goog-Upload-Offset': '0',
+            'X-Goog-Upload-Command': 'upload, finalize',
+        },
+        body: blob,
+    });
+
+    if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
+
+    const fileInfo = await uploadRes.json();
+    let file = fileInfo.file;
+
+    // Step 3: Poll until processing is done
+    while (file.state === 'PROCESSING') {
+        await new Promise(r => setTimeout(r, 3000));
+        const checkRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/${file.name}?key=${apiKey}`
+        );
+        if (!checkRes.ok) throw new Error(`File status check failed (${checkRes.status})`);
+        file = await checkRes.json();
+    }
+
+    if (file.state !== 'ACTIVE') throw new Error(`File processing failed: ${file.state}`);
+
+    // Step 4: Generate transcription
+    const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { file_data: { mime_type: file.mimeType, file_uri: file.uri } },
+                        { text: "Transcribe all spoken audio from this video. Provide only the transcription text." }
+                    ]
+                }]
+            })
+        }
+    );
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Gemini API error (${response.status})`);
+    }
+
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || 'No speech detected in this recording.';
+}
+
+// ─── Blob → base64 ───
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            // Strip the data URL prefix (e.g. "data:video/mp4;base64,")
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+// ─── Copy transcription to clipboard ───
+async function copyTranscription(id) {
+    const panel = document.getElementById(`transcription-${id}`);
+    const textEl = panel.querySelector('.transcription-text');
+    if (!textEl) return;
+
+    try {
+        await navigator.clipboard.writeText(textEl.textContent);
+        const btn = panel.querySelector('.transcription-actions button');
+        if (btn) {
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        }
+    } catch (err) {
+        console.error('Copy failed:', err);
     }
 }
 

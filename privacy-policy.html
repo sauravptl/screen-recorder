@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScreenRec — Privacy Policy</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #cbd5e1;
+            min-height: 100vh;
+            line-height: 1.7;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            padding: 40px 40px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .header-content {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .header p {
+            color: #a5b4fc;
+            margin-top: 6px;
+            font-size: 0.95rem;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-top: 36px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #334155;
+        }
+
+        p {
+            margin-bottom: 14px;
+        }
+
+        ul {
+            margin: 0 0 14px 24px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        strong {
+            color: #e2e8f0;
+        }
+
+        .highlight {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin: 20px 0;
+            color: #a5b4fc;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px 14px;
+            border: 1px solid #334155;
+        }
+
+        th {
+            background: #1e293b;
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        td {
+            font-size: 0.9rem;
+        }
+
+        code {
+            background: #1e293b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #a5b4fc;
+        }
+
+        a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .effective-date {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-content">
+            <h1>Privacy Policy</h1>
+            <p>ScreenRec — Screen Recorder Extension</p>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="highlight">
+            ScreenRec is a fully offline, privacy-first screen recorder. All recordings are stored locally on your device. No data is ever collected, transmitted, or shared with any server or third party.
+        </div>
+
+        <h2>1. Information We Collect</h2>
+        <p><strong>We do not collect any personal information.</strong></p>
+        <p>ScreenRec captures screen video and audio <em>only</em> when you explicitly start a recording. The captured data includes:</p>
+        <ul>
+            <li><strong>Screen video</strong> — the screen, window, or tab you select in Chrome's built-in picker</li>
+            <li><strong>System audio</strong> — only if you enable it and check "Share system audio" in the picker</li>
+            <li><strong>Microphone audio</strong> — only if you enable the microphone toggle before recording</li>
+        </ul>
+        <p>In addition, the following metadata is stored alongside each recording:</p>
+        <ul>
+            <li>Filename (auto-generated, e.g. <code>ScreenRec_2026-02-27T08-30-00.mp4</code>)</li>
+            <li>File size (in bytes)</li>
+            <li>Recording duration</li>
+            <li>Timestamp of when the recording was saved</li>
+        </ul>
+
+        <h2>2. How Your Data Is Stored</h2>
+        <p>All recordings and metadata are stored <strong>locally in your browser's IndexedDB</strong> — a built-in storage mechanism that lives entirely on your device.</p>
+        <ul>
+            <li>No data is uploaded to any cloud service or remote server</li>
+            <li>No data is transmitted over the internet</li>
+            <li>No data is accessible to the extension developer or any third party</li>
+        </ul>
+
+        <h2>3. Data Sharing</h2>
+        <p><strong>We do not share your data with anyone.</strong></p>
+        <p>When you use the "Share" button, ScreenRec uses your operating system's built-in share dialog (Web Share API). The extension itself does not upload or transmit the file — sharing is handled entirely by your OS and the app you choose to share with (e.g. email, messaging apps).</p>
+
+        <h2>4. No Tracking or Analytics</h2>
+        <p>ScreenRec does <strong>not</strong> use:</p>
+        <ul>
+            <li>Analytics services (Google Analytics, Mixpanel, etc.)</li>
+            <li>Tracking pixels or cookies</li>
+            <li>Telemetry or usage reporting</li>
+            <li>Crash reporting services</li>
+            <li>Any form of user identification</li>
+        </ul>
+
+        <h2>5. No Accounts or Sign-In</h2>
+        <p>ScreenRec does not require an account, login, email address, or any personal information to use. There is no sign-up process.</p>
+
+        <h2>6. Permissions Used</h2>
+        <p>The extension requests the following browser permissions, each for a specific purpose:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Permission</th>
+                    <th>Why It's Needed</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>activeTab</code></td>
+                    <td>Required to capture the currently active tab when you choose tab recording</td>
+                </tr>
+                <tr>
+                    <td><code>tabs</code></td>
+                    <td>Used to open and manage the recorder tab and the recordings page</td>
+                </tr>
+                <tr>
+                    <td><code>downloads</code></td>
+                    <td>Allows you to save recordings to your local file system</td>
+                </tr>
+                <tr>
+                    <td><code>Host permissions</code></td>
+                    <td>Required by Chrome to enable screen and audio capture via <code>getDisplayMedia()</code></td>
+                </tr>
+            </tbody>
+        </table>
+        <p>These permissions are used solely to enable the core recording and playback functionality. They are never used to read, collect, or transmit your browsing data.</p>
+
+        <h2>7. Third-Party Services</h2>
+        <p>ScreenRec does not integrate with any third-party services. The only external resource loaded is the <strong>Google Fonts</strong> stylesheet (the "Inter" font family) for visual styling. No personal data is sent to Google through this request.</p>
+
+        <h2>8. Your Control Over Your Data</h2>
+        <p>You have full control over your recordings at all times:</p>
+        <ul>
+            <li><strong>Play</strong> — preview any recording directly in the browser</li>
+            <li><strong>Download</strong> — save a recording to your computer as an MP4 file</li>
+            <li><strong>Share</strong> — share a recording using your device's native share dialog</li>
+            <li><strong>Delete</strong> — permanently remove any individual recording</li>
+            <li><strong>Delete All</strong> — permanently remove all recordings at once</li>
+        </ul>
+        <p>Once deleted, recordings cannot be recovered — they are permanently removed from IndexedDB.</p>
+
+        <h2>9. Children's Privacy</h2>
+        <p>ScreenRec does not knowingly collect any information from anyone, including children under the age of 13. Since no personal data is collected at all, the extension is compliant with COPPA (Children's Online Privacy Protection Act).</p>
+
+        <h2>10. Changes to This Policy</h2>
+        <p>If this privacy policy is updated, the revised version will be posted at this same URL with an updated effective date. Since ScreenRec collects no data, material changes are unlikely.</p>
+
+        <h2>11. Contact</h2>
+        <p>If you have any questions or concerns about this privacy policy, you can reach the developer at:</p>
+        <ul>
+            <li>GitHub: <a href="https://github.com/sauravptl/screen-recorder/issues">github.com/sauravptl/screen-recorder</a></li>
+        </ul>
+
+        <div class="effective-date">
+            Effective date: February 27, 2026
+        </div>
+    </div>
+
+</body>
+
+</html>
