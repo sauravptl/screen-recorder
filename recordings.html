@@ -333,71 +333,24 @@
         }
 
         /* ── API Key section ── */
-        .api-key-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            padding: 14px 20px;
+        /* (removed — now using local Whisper transcription) */
+
+        /* ── Model download progress bar ── */
+        .transcription-progress-bar {
+            width: 100%;
+            height: 6px;
             background: #1e293b;
-            border-radius: 12px;
-            border: 1px solid #334155;
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
         }
 
-        .api-key-bar label {
-            font-size: 0.82rem;
-            font-weight: 500;
-            color: #94a3b8;
-            white-space: nowrap;
-        }
-
-        .api-key-bar input {
-            flex: 1;
-            padding: 8px 12px;
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            color: #e2e8f0;
-            font-family: inherit;
-            font-size: 0.85rem;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-
-        .api-key-bar input:focus {
-            border-color: #6366f1;
-        }
-
-        .api-key-bar input::placeholder {
-            color: #475569;
-        }
-
-        .api-key-bar button {
-            padding: 8px 16px;
-            background: rgba(99, 102, 241, 0.15);
-            color: #a5b4fc;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            white-space: nowrap;
-        }
-
-        .api-key-bar button:hover {
-            background: rgba(99, 102, 241, 0.25);
-        }
-
-        .api-key-status {
-            font-size: 0.78rem;
-            color: #64748b;
-            white-space: nowrap;
-        }
-
-        .api-key-status.saved {
-            color: #6ee7b7;
+        .transcription-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #fde047, #eab308);
+            border-radius: 3px;
+            transition: width 0.3s ease;
         }
 
         /* ── Stats bar ── */
@@ -479,13 +432,6 @@
                 <div class="stat-value" id="totalSize">0 MB</div>
                 <div class="stat-label">Total Size</div>
             </div>
-        </div>
-
-        <div class="api-key-bar" id="apiKeyBar">
-            <label for="geminiKeyInput">Gemini API Key</label>
-            <input type="password" id="geminiKeyInput" placeholder="Paste your Gemini API key here...">
-            <button id="saveKeyBtn">Save Key</button>
-            <span class="api-key-status" id="apiKeyStatus"></span>
         </div>
 
         <div id="recordingsList"></div>
