@@ -6,6 +6,10 @@ import { pipeline, env } from './lib/transformers.min.js';
 // Always fetch models from Hugging Face Hub (not local filesystem)
 env.allowLocalModels = false;
 
+// Point ONNX runtime to local WASM files (avoids CSP violation in extensions)
+const wasmBase = new URL('./lib/', import.meta.url).href;
+env.backends.onnx.wasm.wasmPaths = wasmBase;
+
 let transcriber = null;
 
 self.addEventListener('message', async (e) => {
