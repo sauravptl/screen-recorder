@@ -338,37 +338,60 @@ function stopLocalTimer() {
 // ─── Handle recording stop: save to IndexedDB ───
 async function handleRecordingStop() {
   const duration = Date.now() - recordingStartTime - pausedDuration;
+
+  // Capture mimeType before cleanup() nulls audioContext (recorder itself is kept)
+  const mimeType = recorder?.mimeType || "video/webm";
   cleanup();
 
   if (data.length === 0) {
     console.warn("[recorder] No data collected.");
+    data = [];
     chrome.runtime.sendMessage({ type: "recording-cancelled" }).catch(() => {});
     window.close();
     return;
   }
 
-  const mimeType = recorder?.mimeType || "video/webm";
   const isMP4 = mimeType.startsWith("video/mp4");
   const blob = new Blob(data, { type: isMP4 ? "video/mp4" : "video/webm" });
+  // Free memory immediately — the Blob now owns the data
+  data = [];
+
   const now = new Date();
   const ts = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const ext = isMP4 ? "mp4" : "webm";
   const filename = `ScreenRec_${ts}.${ext}`;
 
+  let saveFailed = false;
   try {
     await saveRecording(blob, filename, duration);
     console.log("[recorder] Recording saved to IndexedDB.");
   } catch (dbErr) {
+    saveFailed = true;
     console.error("[recorder] Failed to save to IndexedDB:", dbErr);
+
+    // Show a human-readable error instead of closing silently
+    const isQuota =
+      dbErr.name === "QuotaExceededError" ||
+      (dbErr.message && dbErr.message.toLowerCase().includes("quota"));
+    const msg = isQuota
+      ? "Storage full — recording could not be saved. Free up disk space and try again."
+      : `Failed to save recording: ${dbErr.message || "Unknown error"}`;
+
+    if (savingScreen) {
+      savingScreen.innerHTML = `
+        <div style="padding:24px;text-align:center;font-family:sans-serif">
+          <p style="color:#c0392b;font-size:15px;margin-bottom:12px">⚠️ ${msg}</p>
+          <button id="closeAfterError" style="padding:8px 20px;cursor:pointer">Close</button>
+        </div>`;
+      document.getElementById("closeAfterError")?.addEventListener("click", () => window.close());
+    }
   }
 
-  data = [];
-
-  // Notify background: recording is saved
-  chrome.runtime.sendMessage({ type: "recording-finished" }).catch(() => {});
-
-  // Close this recorder window (background will open recordings page)
-  setTimeout(() => window.close(), 300);
+  if (!saveFailed) {
+    // Notify background: recording is saved, then close
+    chrome.runtime.sendMessage({ type: "recording-finished" }).catch(() => {});
+    setTimeout(() => window.close(), 300);
+  }
 }
 
 // ─── Cleanup streams ───
@@ -376,8 +399,10 @@ function cleanup() {
   stopLocalTimer();
   activeStreams.forEach((s) => s.getTracks().forEach((t) => t.stop()));
   activeStreams = [];
+  recordingStartTime = 0;
   pausedDuration = 0;
   pauseStartTime = 0;
+  isPaused = false;
 
   if (audioContext) {
     audioContext.close().catch(() => {});
