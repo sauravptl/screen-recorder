@@ -373,7 +373,7 @@ async function handleRecordingStop() {
     if (savingScreenEl2) {
       savingScreenEl2.innerHTML = `
         <div style="padding:24px;text-align:center;font-family:sans-serif">
-          <p style="color:#c0392b;font-size:15px;margin-bottom:12px">⚠️ Recording too large to assemble in memory: ${blobErr?.message || "Unknown error"}.</p>
+          <p style="color:#c0392b;font-size:15px;margin-bottom:12px">⚠️ Failed to assemble recording: ${blobErr?.message || "Unknown error"}.</p>
           <button id="closeAfterError" style="padding:8px 20px;cursor:pointer">Close</button>
         </div>`;
       document.getElementById("closeAfterError")?.addEventListener("click", () => window.close());

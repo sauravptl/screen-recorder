@@ -21,7 +21,7 @@ try {
 } catch (err) {
     console.error('[whisper] Failed to initialize transformers.js:', err);
     window.whisperLoadError = err?.message || String(err);
-    // Re-throw so the module load surface this in DevTools too.
+    // Re-throw so the module load surfaces this in DevTools too.
     throw err;
 }
 
