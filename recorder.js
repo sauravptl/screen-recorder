@@ -352,18 +352,19 @@ async function handleRecordingStop() {
 
   const isMP4 = mimeType.startsWith("video/mp4");
   const blob = new Blob(data, { type: isMP4 ? "video/mp4" : "video/webm" });
-  // Free memory immediately — the Blob now owns the data
-  data = [];
 
   const now = new Date();
   const ts = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const ext = isMP4 ? "mp4" : "webm";
   const filename = `ScreenRec_${ts}.${ext}`;
+  const savingScreenEl = savingScreen || document.getElementById("savingScreen");
 
   let saveFailed = false;
   try {
     await saveRecording(blob, filename, duration);
     console.log("[recorder] Recording saved to IndexedDB.");
+    // Free memory after the recording has been durably saved.
+    data = [];
   } catch (dbErr) {
     saveFailed = true;
     console.error("[recorder] Failed to save to IndexedDB:", dbErr);
@@ -376,8 +377,8 @@ async function handleRecordingStop() {
       ? "Storage full — recording could not be saved. Free up disk space and try again."
       : `Failed to save recording: ${dbErr.message || "Unknown error"}`;
 
-    if (savingScreen) {
-      savingScreen.innerHTML = `
+    if (savingScreenEl) {
+      savingScreenEl.innerHTML = `
         <div style="padding:24px;text-align:center;font-family:sans-serif">
           <p style="color:#c0392b;font-size:15px;margin-bottom:12px">⚠️ ${msg}</p>
           <button id="closeAfterError" style="padding:8px 20px;cursor:pointer">Close</button>
