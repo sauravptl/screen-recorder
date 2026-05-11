@@ -339,7 +339,7 @@ function stopLocalTimer() {
 async function handleRecordingStop() {
   const duration = Date.now() - recordingStartTime - pausedDuration;
 
-  // Capture mimeType before cleanup() nulls audioContext (recorder itself is kept)
+  // Capture mimeType before cleanup() tears down streams/audio resources.
   const mimeType = recorder?.mimeType || "video/webm";
   cleanup();
 
