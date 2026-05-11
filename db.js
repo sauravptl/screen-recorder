@@ -42,7 +42,7 @@ async function saveRecording(blob, name, duration) {
         // this is critical for large blobs where the write takes time.
         tx.oncomplete = () => resolve(recordId);
         tx.onerror = () => reject(tx.error);
-        tx.onabort = () => reject(new Error(`IndexedDB transaction aborted: ${tx.error?.message || `unknown reason`}`));
+        tx.onabort = () => reject(new Error(`IndexedDB transaction aborted: ${tx.error?.message || 'unknown reason'}`));
     });
 }
 

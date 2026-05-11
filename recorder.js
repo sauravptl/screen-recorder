@@ -366,8 +366,6 @@ async function handleRecordingStop() {
   try {
     await saveRecording(blob, filename, duration);
     console.log("[recorder] Recording saved to IndexedDB.");
-    // Free memory after the recording has been durably saved.
-    data = [];
   } catch (dbErr) {
     saveFailed = true;
     console.error("[recorder] Failed to save to IndexedDB:", dbErr);
