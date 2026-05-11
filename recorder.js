@@ -345,7 +345,6 @@ async function handleRecordingStop() {
 
   if (data.length === 0) {
     console.warn("[recorder] No data collected.");
-    data = [];
     chrome.runtime.sendMessage({ type: "recording-cancelled" }).catch(() => {});
     window.close();
     return;
