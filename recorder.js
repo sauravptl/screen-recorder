@@ -345,6 +345,7 @@ async function handleRecordingStop() {
 
   if (data.length === 0) {
     console.warn("[recorder] No data collected.");
+    data = [];
     chrome.runtime.sendMessage({ type: "recording-cancelled" }).catch(() => {});
     window.close();
     return;
@@ -352,6 +353,8 @@ async function handleRecordingStop() {
 
   const isMP4 = mimeType.startsWith("video/mp4");
   const blob = new Blob(data, { type: isMP4 ? "video/mp4" : "video/webm" });
+  // Free memory immediately — the Blob now owns the data
+  data = [];
 
   const now = new Date();
   const ts = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
@@ -363,8 +366,6 @@ async function handleRecordingStop() {
   try {
     await saveRecording(blob, filename, duration);
     console.log("[recorder] Recording saved to IndexedDB.");
-    // Free memory after the recording has been durably saved.
-    data = [];
   } catch (dbErr) {
     saveFailed = true;
     console.error("[recorder] Failed to save to IndexedDB:", dbErr);
