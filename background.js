@@ -30,7 +30,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // ── Stop recording — forward to recorder tab ──
     if (message.type === 'stop-recording') {
         if (recorderTabId) {
-            chrome.tabs.sendMessage(recorderTabId, { type: 'stop-recording-tab' }).catch(() => { });
+            // Reliably deliver the stop request — if the recorder tab is
+            // momentarily unresponsive (e.g. still wiring up its listener,
+            // or busy with a chunk write), a single fire-and-forget message
+            // can be silently dropped, leaving the user with no saved file.
+            // Retry a few times, then give up cleanly.
+            sendStopToRecorderTabWithRetry(recorderTabId);
         }
         sendResponse({ success: true });
         return false;
@@ -112,6 +117,33 @@ async function openRecorderWindow(options = {}) {
         active: true
     });
     recorderTabId = tab.id;
+}
+
+// ─── Reliably send 'stop-recording-tab' to the recorder tab ───
+// Retries on "Receiving end does not exist" / no-response, which can happen
+// if the message races with the tab still loading its listener.
+async function sendStopToRecorderTabWithRetry(tabId, attempt = 0) {
+    const maxAttempts = 5;
+    try {
+        const resp = await chrome.tabs.sendMessage(tabId, { type: 'stop-recording-tab' });
+        if (resp && resp.ok) return;
+        throw new Error('No ack from recorder tab');
+    } catch (err) {
+        if (attempt + 1 >= maxAttempts) {
+            console.warn('[background] Could not deliver stop to recorder tab; clearing state.', err?.message);
+            // Recorder tab is unreachable — reset state so the popup/badge don't
+            // get stuck pretending we're still recording.
+            isRecording = false;
+            isPaused = false;
+            lastDuration = 0;
+            recorderTabId = null;
+            recorderWindowId = null;
+            chrome.action.setBadgeText({ text: '' });
+            return;
+        }
+        // Back off briefly and retry.
+        setTimeout(() => sendStopToRecorderTabWithRetry(tabId, attempt + 1), 250);
+    }
 }
 
 // ─── Open recordings page: reuse existing tab or create new one ───
