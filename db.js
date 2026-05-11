@@ -35,8 +35,11 @@ async function saveRecording(blob, name, duration) {
             timestamp: Date.now()
         };
         const req = store.add(record);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
+        // Wait for the full transaction commit, not just the add request —
+        // this is critical for large blobs where the write takes time.
+        tx.oncomplete = () => resolve(req.result);
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(new Error(`IndexedDB transaction aborted: ${tx.error?.message || `unknown reason`}`));
     });
 }
 
