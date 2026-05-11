@@ -34,8 +34,8 @@ async function saveRecording(blob, name, duration) {
             duration: duration || 0,
             timestamp: Date.now()
         };
-        const req = store.add(record);
         let recordId;
+        const req = store.add(record);
         req.onsuccess = () => { recordId = req.result; };
         req.onerror = () => reject(req.error);
         // Wait for the full transaction commit, not just the add request —
