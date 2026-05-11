@@ -357,7 +357,7 @@ async function handleRecordingStop() {
   const ts = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const ext = isMP4 ? "mp4" : "webm";
   const filename = `ScreenRec_${ts}.${ext}`;
-  const savingScreenEl = savingScreen || document.getElementById("savingScreen");
+  const savingScreenEl = document.getElementById("savingScreen");
 
   let saveFailed = false;
   try {
@@ -371,11 +371,11 @@ async function handleRecordingStop() {
 
     // Show a human-readable error instead of closing silently
     const isQuota =
-      dbErr.name === "QuotaExceededError" ||
-      (dbErr.message && dbErr.message.toLowerCase().includes("quota"));
+      dbErr?.name === "QuotaExceededError" ||
+      dbErr?.message?.toLowerCase().includes("quota");
     const msg = isQuota
       ? "Storage full — recording could not be saved. Free up disk space and try again."
-      : `Failed to save recording: ${dbErr.message || "Unknown error"}`;
+      : `Failed to save recording: ${dbErr?.message || "Unknown error"}`;
 
     if (savingScreenEl) {
       savingScreenEl.innerHTML = `
