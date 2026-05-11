@@ -1,18 +1,29 @@
 // ─── Whisper Transcription (runs on main thread of extension page) ───
 // Loaded as <script type="module"> so CSP wasm-unsafe-eval is respected.
 
-import { pipeline, env } from './lib/transformers.min.js';
+window.whisperReady = false;
+window.whisperLoadError = null;
 
-// Fetch models from Hugging Face Hub
-env.allowLocalModels = false;
+let pipeline, env;
+try {
+    ({ pipeline, env } = await import('./lib/transformers.min.js'));
 
-// Point ONNX runtime to local WASM files (avoids CSP script-src violation)
-const wasmBase = new URL('./lib/', import.meta.url).href;
-env.backends.onnx.wasm.wasmPaths = wasmBase;
+    // Fetch models from Hugging Face Hub
+    env.allowLocalModels = false;
 
-// Single-threaded — no pthread sub-workers in extension context
-env.backends.onnx.wasm.numThreads = 1;
-env.backends.onnx.wasm.proxy = false;
+    // Point ONNX runtime to local WASM files (avoids CSP script-src violation)
+    const wasmBase = new URL('./lib/', import.meta.url).href;
+    env.backends.onnx.wasm.wasmPaths = wasmBase;
+
+    // Single-threaded — no pthread sub-workers in extension context
+    env.backends.onnx.wasm.numThreads = 1;
+    env.backends.onnx.wasm.proxy = false;
+} catch (err) {
+    console.error('[whisper] Failed to initialize transformers.js:', err);
+    window.whisperLoadError = err?.message || String(err);
+    // Re-throw so the module load surface this in DevTools too.
+    throw err;
+}
 
 let transcriber = null;
 
@@ -25,13 +36,20 @@ let transcriber = null;
 window.whisperTranscribe = async function (audioData, callbacks) {
     if (!transcriber) {
         callbacks.onStatus?.('Downloading Whisper model (one-time ~150 MB)...');
-        transcriber = await pipeline(
-            'automatic-speech-recognition',
-            'Xenova/whisper-base',
-            {
-                progress_callback: (progress) => callbacks.onProgress?.(progress),
-            }
-        );
+        try {
+            transcriber = await pipeline(
+                'automatic-speech-recognition',
+                'Xenova/whisper-base',
+                {
+                    progress_callback: (progress) => callbacks.onProgress?.(progress),
+                }
+            );
+        } catch (err) {
+            // Surface a helpful, specific error rather than letting a generic
+            // "fetch failed" or wasm error bubble up unannotated.
+            const msg = err?.message || String(err);
+            throw new Error(`Could not load Whisper model: ${msg}`);
+        }
     }
 
     callbacks.onStatus?.('Transcribing...');

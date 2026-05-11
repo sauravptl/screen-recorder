@@ -203,7 +203,10 @@ startCaptureBtn.addEventListener("click", async () => {
     };
 
     // 6. Start!
-    recorder.start(1000);
+    // Use a larger timeslice (3s) so very long recordings don't accumulate
+    // hundreds of tiny Blob chunks in memory, which can cause Blob assembly
+    // to fail or be very slow on stop (notably for recordings > 10 min).
+    recorder.start(3000);
     recordingStartTime = Date.now();
     pausedDuration = 0;
     pauseStartTime = 0;
@@ -289,6 +292,14 @@ function doStop() {
     if (recorder.state === "paused") {
       recorder.resume(); // some browsers require resume before stop
     }
+    // Flush any data buffered inside the encoder before stopping. Without
+    // this, the last few seconds (especially for long recordings using a
+    // larger timeslice) can be lost when the user hits Stop.
+    try {
+      recorder.requestData();
+    } catch (e) {
+      // requestData() throws if recorder isn't recording — safe to ignore.
+    }
     recorder.stop();
   }
   // Show saving screen
@@ -352,7 +363,26 @@ async function handleRecordingStop() {
   }
 
   const isMP4 = mimeType.startsWith("video/mp4");
-  const blob = new Blob(data, { type: isMP4 ? "video/mp4" : "video/webm" });
+  let blob;
+  try {
+    blob = new Blob(data, { type: isMP4 ? "video/mp4" : "video/webm" });
+  } catch (blobErr) {
+    console.error("[recorder] Failed to assemble Blob from chunks:", blobErr);
+    data = [];
+    const savingScreenEl2 = document.getElementById("savingScreen");
+    if (savingScreenEl2) {
+      savingScreenEl2.innerHTML = `
+        <div style="padding:24px;text-align:center;font-family:sans-serif">
+          <p style="color:#c0392b;font-size:15px;margin-bottom:12px">⚠️ Recording too large to assemble in memory: ${blobErr?.message || "Unknown error"}.</p>
+          <button id="closeAfterError" style="padding:8px 20px;cursor:pointer">Close</button>
+        </div>`;
+      document.getElementById("closeAfterError")?.addEventListener("click", () => window.close());
+    }
+    // Tell the background to clear its recording state so the popup doesn't
+    // stay stuck on "Saving..." forever.
+    chrome.runtime.sendMessage({ type: "recording-cancelled" }).catch(() => {});
+    return;
+  }
   // Free memory immediately — the Blob now owns the data
   data = [];
 
@@ -386,6 +416,9 @@ async function handleRecordingStop() {
         </div>`;
       document.getElementById("closeAfterError")?.addEventListener("click", () => window.close());
     }
+    // Reset background recording state so the toolbar popup doesn't keep
+    // showing "Saving..." or block the next recording.
+    chrome.runtime.sendMessage({ type: "recording-cancelled" }).catch(() => {});
   }
 
   if (!saveFailed) {

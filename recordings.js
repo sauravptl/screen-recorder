@@ -258,8 +258,21 @@ function showTranscriptionResult(id, text) {
 
 // ─── Whisper transcription (runs on main thread via whisper.js module) ───
 async function transcribeWithWhisper(id, rec) {
+    // The whisper.js module is loaded as <script type="module"> and may not
+    // be ready at the moment the user clicks Transcribe (especially on first
+    // page load). Wait briefly for it instead of failing immediately.
     if (typeof window.whisperTranscribe !== 'function') {
-        throw new Error('Whisper engine is still loading. Please try again in a moment.');
+        const statusEl = document.querySelector(`#transcription-${id} .transcription-status`);
+        if (statusEl) statusEl.textContent = 'Loading Whisper engine...';
+        const ok = await waitFor(() => typeof window.whisperTranscribe === 'function', 15000);
+        if (!ok) {
+            const loadErr = window.whisperLoadError;
+            throw new Error(
+                loadErr
+                    ? `Whisper engine failed to load: ${loadErr}`
+                    : 'Whisper engine is still loading. Please try again in a moment.'
+            );
+        }
     }
 
     // Extract audio from video (16 kHz mono)
@@ -284,6 +297,19 @@ async function transcribeWithWhisper(id, rec) {
     });
 
     return text;
+}
+
+// ─── Poll a predicate until it's true or we time out ───
+function waitFor(predicate, timeoutMs) {
+    return new Promise((resolve) => {
+        const start = Date.now();
+        const tick = () => {
+            if (predicate()) return resolve(true);
+            if (Date.now() - start >= timeoutMs) return resolve(false);
+            setTimeout(tick, 100);
+        };
+        tick();
+    });
 }
 
 // ─── Web Speech API fallback (plays audio, captures via browser recognition) ───
