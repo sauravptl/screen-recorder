@@ -58,6 +58,11 @@ window.whisperTranscribe = async function (audioData, callbacks) {
         chunk_length_s: 30,
         stride_length_s: 5,
         return_timestamps: false,
+        // Explicitly set language and task to avoid the
+        // "No language specified - defaulting to English (en)" warning
+        // emitted by transformers.js when using a multilingual Whisper model.
+        language: 'english',
+        task: 'transcribe',
     });
 
     return result.text;
